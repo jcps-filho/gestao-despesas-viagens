@@ -1,0 +1,30 @@
+<div class="form-group row mt-4">
+    <form [formGroup]="gestaoForm" (ngSubmit)="onSubmit()">
+        <div class="col-md-4">
+            <input type="text" id="description" class="form-control" placeholder="Descrição do Item" formControlName="description" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" id="quantity" class="form-control" placeholder="Quantidade/Unidade"  formControlName="quantity" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" id="amount" class="form-control" placeholder="Valor"  formControlName="amount" required>
+        </div>
+        <div class="col-md-2">
+            <select id="currency-from" class="form-control"  formControlName="currencyFrom" required>
+                <option value="BRL">BRL</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select id="currency-to" class="form-control"  formControlName="currencyTo" required>
+                <option value="BRL">BRL</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+            </select>
+        </div>
+    </form>
+</div>
+<div class="text-center mt-4">
+    <button id="add-expense" class="btn btn-primary"  [disabled]="!gestaoForm.valid" (click)="onSubmit()">Adicionar</button>
+</div>
