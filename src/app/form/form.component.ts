@@ -1,48 +1,55 @@
 import { Component, EventEmitter, Output, } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TableComponent } from '../table/table.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Expense } from '../expense';
+import { GestaoService } from '../gestao-service';
 
 @Component({
   selector: 'app-form',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, TableComponent, HttpClientModule ],
+  imports: [FormsModule, ReactiveFormsModule, HttpClientModule ],
   templateUrl: './form.component.html',
-  styleUrl: './form.component.css'
+  styleUrl: './form.component.css',
+  providers: [GestaoService]
 })
 export class FormComponent {
   @Output() onExpenseAdd = new EventEmitter<Expense>();
-
   private apiUrl = 'https://api.exchangerate-api.com/v4/latest/';
+  expenses: Expense[] = [];
+  totalOrigin: number = 0;
+  totalDestination: number = 0;
 
-  constructor(private httpClient: HttpClient) {}
-  gestaoForm = new FormGroup({
-    description: new FormControl(null, Validators.required),
+  form = new FormGroup({
+    description: new FormControl('', Validators.required),
     quantity: new FormControl(0, Validators.required),
-    amount: new FormControl(0.0, Validators.required),
-    currencyFrom: new FormControl(null, Validators.required),
-    currencyTo: new FormControl(null, Validators.required),
-  });
+    amount: new FormControl(0, Validators.required),
+    currencyFrom: new FormControl('', Validators.required),
+    currencyTo: new FormControl('', Validators.required),
+  })
+
+  constructor(
+    private httpClient: HttpClient,
+    public gestaoService: GestaoService
+  ) {}
 
   rates: { [key: string]: number } = {};
   
   onSubmit() {
-    this.httpClient.get<any>(this.apiUrl + this.gestaoForm.get('currencyFrom')?.value).subscribe({
+    this.httpClient.get<any>(this.apiUrl + this.form.get('currencyFrom')?.value).subscribe({
       next: (response) => {
         this.rates = response.rates;
-        const maybeCurrencyTo: string = this.gestaoForm.get('currencyTo')?.value ?? ''
+        const maybeCurrencyTo: string = this.form.get('currencyTo')?.value ?? ''
         const rate: number = this.rates[maybeCurrencyTo];
 
         if (rate != null) {
-          const description = this.gestaoForm.get('description')?.value ?? '';
-          const quantity = this.gestaoForm.get('quantity')?.value ?? 0;
-          const amount = this.gestaoForm.get('amount')?.value ?? 0.0;
-          const currencyFrom = this.gestaoForm.get('currencyFrom')?.value ?? '';
+          const description = this.form.get('description')?.value ?? '';
+          const quantity = this.form.get('quantity')?.value ?? 0;
+          const amount = this.form.get('amount')?.value ?? 0.0;
+          const currencyFrom = this.form.get('currencyFrom')?.value ?? '';
           const convertedAmount = ((quantity*amount) * rate).toFixed(2);
           const expense = new Expense(description, quantity, amount, currencyFrom, maybeCurrencyTo, Number(convertedAmount));
           this.addExpense(expense);
-          this.gestaoForm.reset();
+          this.form.reset();
         } else {
           alert('No rate found');
         }
@@ -54,6 +61,28 @@ export class FormComponent {
   }
 
   addExpense(expense: Expense) {
-    this.onExpenseAdd.emit(expense);
+    this.expenses.push(expense);
+    this.totalOrigin = this.totalOrigin + expense.amount;
+    this.totalDestination = this.totalDestination + expense.convertedAmount;
+  }
+
+  editExpense(idx: number, expense: Expense) {
+    this.deleteExpense(idx, expense);
+
+    this.form.setValue({
+      description: expense.description, 
+      quantity: expense.quantity,
+      amount: expense.amount,
+      currencyFrom: expense.currencyFrom,
+      currencyTo: expense.currencyTo
+    });
+  }
+
+  deleteExpense(idx: number, expense: Expense) {
+    if (idx > -1) {
+      this.expenses.splice(idx, 1);
+      this.totalOrigin = this.totalOrigin - expense.amount
+      this.totalDestination = this.totalDestination - expense.convertedAmount;
+    }
   }
 }
