@@ -81,7 +81,7 @@ export class FormComponent {
   deleteExpense(idx: number, expense: Expense) {
     if (idx > -1) {
       this.expenses.splice(idx, 1);
-      this.totalOrigin = this.totalOrigin - expense.amount
+      this.totalOrigin = this.totalOrigin - expense.amount;
       this.totalDestination = this.totalDestination - expense.convertedAmount;
     }
   }
